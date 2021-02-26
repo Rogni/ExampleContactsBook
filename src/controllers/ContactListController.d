@@ -1,11 +1,15 @@
 module controllers.ContactListController;
 
 import views;
-import utils;
 
 import gobject.ObjectG;
 import gtk.Widget;
 import gtk.Button;
+
+import utils.GObjectType;
+import utils.interfaces.gio.ListModelIF;
+import gobject.Signals;
+import gio.c.functions;
 
 import models;
 
@@ -21,8 +25,10 @@ class ContactRowItem: ObjectG {
     }
 }
 
-class ContactListController: ListModel, StoreDelegate
+class ContactListController: ObjectG, ListModelIF, StoreDelegate
 {
+    mixin GRegisterStaticType!(ContactListController, "ContactListController");
+
     private ContactsWidget _contacts;
     private Store _store;
 
@@ -30,7 +36,8 @@ class ContactListController: ListModel, StoreDelegate
         return _contacts;
     }
 
-    this() {
+    this(GObject *gobj, bool owned = false) {
+        super(gobj, owned);
         _contacts = new ContactsWidget();
         _store = new Store(this);
         _contacts.contactsListBox.bindModel!(ContactRowItem)(this, (ContactRowItem item) {
@@ -50,6 +57,14 @@ class ContactListController: ListModel, StoreDelegate
     }
 
     override {
+        void* getStruct() {
+            return getObjectGStruct();
+        }
+
+        GListModel* getListModelStruct(bool transferOwnership = false) {
+            return cast(GListModel*) getStruct;
+        }
+
         GType getItemType() {
             return GType.OBJECT;
         }
@@ -58,8 +73,21 @@ class ContactListController: ListModel, StoreDelegate
             return _store.contactsCount;
         }
 
+        ObjectG getObject(uint position) {
+            return null;
+        }
+
         void* getItem(uint position) {
             return (new ContactRowItem(_store.contactByIndex(position))).getStruct();
+        }
+
+        void itemsChanged(uint position, uint removed, uint added) {
+            g_list_model_items_changed(getListModelStruct(), position, removed, added);
+        }
+
+        gulong addOnItemsChanged(void delegate(uint, uint, uint, ListModelIF) dlg, ConnectFlags connectFlags=cast(ConnectFlags)0)
+        {
+            return Signals.connect(this, "items-changed", dlg, connectFlags ^ ConnectFlags.SWAPPED);
         }
     }
 }

@@ -8,7 +8,11 @@ import gobject.c.functions;
 import gobject.Type;
 import gobject.ObjectG;
 
+import utils.interfaces.GInterface;
 
+/**
+ * Check, if Type have ObjectG parent class
+ */
 template IsObjectGChild(Type)
 {
     public import std.meta: anySatisfy;
@@ -30,23 +34,32 @@ unittest {
     static assert(!IsObjectGChild!float);
 }
 
+/**
+ * Create new ObjectG child instance
+ */
 GObjType newGObject(GObjType)(GParameter[] parameters = []) if (IsObjectGChild!GObjType) {
     return cast(GObjType) new ObjectG(GObjType.getType, parameters);
 }
 
-
+/**
+ * 
+ */
 mixin template GRegisterStaticType(Typename, string gtypename) 
 {
-    GObject * gObject = null;
+    private GObject * gObject = null;
 
     private extern(C) static void init_g_object(void* self, void* klass) {
         auto asGObject = cast(GObject*)self;
         auto t = new Typename(asGObject, true);
+        t.gObject = asGObject;
         t.ref_();
     }
 
     static GType getType() 
     {
+        import std.traits: BaseClassesTuple, InterfacesTuple;
+        import gobject.Type;
+
         static GType type = GType.INVALID;
         if (type == GType.INVALID) {
             alias ParentType = BaseClassesTuple!Typename[0];
@@ -66,6 +79,13 @@ mixin template GRegisterStaticType(Typename, string gtypename)
             info.valueTable = null;
 
             type = Type.registerStatic(parent_g_type, gtypename, &info, cast(GTypeFlags) 0);
+            static foreach (iface; InterfacesTuple!Typename)
+            {   
+                static if ( __traits(compiles, iface.getType)) {
+                    type.registerStaticInterface!(iface);
+                }
+            }
+
         }
         return type;
     }

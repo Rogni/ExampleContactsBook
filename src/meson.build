@@ -4,8 +4,10 @@ src = [
     'models/Contact.d',
     'models/Store.d',
     'utils/package.d',
-    'utils/ListModel.d',
     'utils/GObjectType.d',
+    'utils/interfaces/GInterface.d',
+    'utils/interfaces/gio/ListModelIF.d',
+    
     'views/package.d',
     'views/MainWindow.d',
     'views/BaseListBox.d',
@@ -16,4 +18,4 @@ src = [
     'controllers/ContactListController.d'
 ]
 
-executable('ListModelExample', src, dependencies: [gtkdep, glib], d_unittest: true)
+executable('ListModelExample', src, dependencies: [gtkdep, glib], d_unittest: false)
