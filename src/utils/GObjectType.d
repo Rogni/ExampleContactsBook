@@ -82,7 +82,7 @@ mixin template GRegisterStaticType(Typename, string gtypename)
             static foreach (iface; InterfacesTuple!Typename)
             {   
                 static if ( __traits(compiles, iface.getType)) {
-                    type.registerStaticInterface!(iface);
+                    Type.addInterfaceStatic(type, ListModelIF.getType(), getInterfaceInfo!iface());
                 }
             }
 

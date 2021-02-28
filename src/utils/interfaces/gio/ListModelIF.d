@@ -6,13 +6,13 @@ public import utils.interfaces.GInterface;
 import gobject.ObjectG;
 import gobject.Type;
 
-void registerStaticInterface(GInterfaceType: ListModelIF)(GType type) {
-    GInterfaceInfo list_iface_info = {
+GInterfaceInfo * getInterfaceInfo(GInterfaceType: ListModelIF)() {
+    static GInterfaceInfo info = {
             cast(GInterfaceInitFunc)&init_list_model_interface,
             null, 
             null
-        };
-    Type.addInterfaceStatic(type, ListModelIF.getType(), &list_iface_info);
+    };
+    return &info; 
 }
 
 private extern (C) void init_list_model_interface(
